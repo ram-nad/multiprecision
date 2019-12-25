@@ -72,9 +72,12 @@ inline BOOST_MP_CXX14_CONSTEXPR void resize_for_carry(cpp_int_backend<MinBits1, 
 }
 
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2, unsigned MinBits3, unsigned MaxBits3, cpp_integer_type SignType3, cpp_int_check_type Checked3, class Allocator3>
-inline BOOST_MP_CXX14_CONSTEXPR typename enable_if_c<!is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value && !is_trivial_cpp_int<cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2> >::value && !is_trivial_cpp_int<cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3> >::value>::type
+inline BOOST_MP_CXX14_CONSTEXPR typename enable_if_c<   (is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value  == false)
+                                                     && (is_trivial_cpp_int<cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2> >::value  == false)
+                                                     && (is_trivial_cpp_int<cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3> >::value  == false)
+                                                     && (                   cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable == true)>::type
 eval_multiply(
-    cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>&       result,
+          cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>& result,
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
@@ -150,10 +153,132 @@ eval_multiply(
    {
       carry = 0;
 
-      const unsigned inner_limit =
-        cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable
-          ? bs
-          : (std::min)(result.size() - i, bs);
+      const unsigned inner_limit = bs;
+
+      unsigned j = 0;
+
+      for (; j < inner_limit; ++j)
+      {
+         BOOST_ASSERT(i + j < result.size());
+#if (!defined(__GLIBCXX__) && !defined(__GLIBCPP__)) || !BOOST_WORKAROUND(BOOST_GCC_VERSION, <= 50100)
+         BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >
+                                                                                 static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value) * static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value)));
+#endif
+         carry += static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
+         BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
+         carry += pr[i + j];
+#ifdef __MSVC_RUNTIME_CHECKS
+         pr[i + j] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+#else
+         pr[i + j] = static_cast<limb_type>(carry);
+#endif
+         carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
+         BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
+      }
+      if (carry)
+      {
+         //resize_for_carry(result, (i + inner_limit) + 1); // May throw if checking is enabled
+
+         if (inner_limit < (result.size() - i))
+         {
+#ifdef __MSVC_RUNTIME_CHECKS
+            pr[(i + inner_limit)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+#else
+            pr[(i + inner_limit)] = static_cast<limb_type>(carry);
+#endif
+         }
+      }
+   }
+   result.normalize();
+   //
+   // Set the sign of the result:
+   //
+   result.sign(result_is_neg);
+}
+
+template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2, unsigned MinBits3, unsigned MaxBits3, cpp_integer_type SignType3, cpp_int_check_type Checked3, class Allocator3>
+inline BOOST_MP_CXX14_CONSTEXPR typename enable_if_c<   (is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value  == false)
+                                                     && (is_trivial_cpp_int<cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2> >::value  == false)
+                                                     && (is_trivial_cpp_int<cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3> >::value  == false)
+                                                     && (                   cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::variable == false)>::type
+eval_multiply(
+          cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>& result,
+    const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
+    const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
+{
+   // Very simple long multiplication, only usable for small numbers of limb_type's
+   // but that's the typical use case for this type anyway:
+   //
+   // Special cases first:
+   //
+   unsigned                                                                                          as = a.size();
+   unsigned                                                                                          bs = b.size();
+   typename cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>::const_limb_pointer pa = a.limbs();
+   typename cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>::const_limb_pointer pb = b.limbs();
+
+   const bool result_is_neg = (b.sign() != a.sign());
+
+   if (as == 1)
+   {
+      if (bs == 1)
+      {
+         result = static_cast<double_limb_type>(*pa) * static_cast<double_limb_type>(*pb);
+      }
+      else
+      {
+         limb_type l = *pa;
+         eval_multiply(result, b, l);
+      }
+      result.sign(result_is_neg);
+      return;
+   }
+   if (bs == 1)
+   {
+      limb_type l = *pb;
+      eval_multiply(result, a, l);
+      result.sign(result_is_neg);
+      return;
+   }
+
+   if ((void*)&result == (void*)&a)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(a);
+      eval_multiply(result, t, b);
+      return;
+   }
+   if ((void*)&result == (void*)&b)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(b);
+      eval_multiply(result, a, t);
+      return;
+   }
+
+   result.resize(as + bs, as + bs - 1);
+   typename cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_pointer pr = result.limbs();
+#ifdef BOOST_NO_CXX14_CONSTEXPR
+   static const double_limb_type limb_max        = ~static_cast<limb_type>(0u);
+   static const double_limb_type double_limb_max = ~static_cast<double_limb_type>(0u);
+#else
+   constexpr const double_limb_type limb_max = ~static_cast<limb_type>(0u);
+   constexpr const double_limb_type double_limb_max = ~static_cast<double_limb_type>(0u);
+#endif
+   BOOST_STATIC_ASSERT((double_limb_max - (2U * limb_max)) >= (limb_max * limb_max));
+
+   double_limb_type carry = 0;
+#ifndef BOOST_MP_NO_CONSTEXPR_DETECTION
+   if (BOOST_MP_IS_CONST_EVALUATED(as))
+   {
+      for (unsigned i = 0; i < result.size(); ++i)
+         pr[i] = 0;
+   }
+   else
+#endif
+   std::memset(pr, 0, result.size() * sizeof(limb_type));
+   for (unsigned i = 0; i < as; ++i)
+   {
+      carry = 0;
+
+      const unsigned inner_limit = (std::min)(result.size() - i, bs);
 
       unsigned j = 0;
 
