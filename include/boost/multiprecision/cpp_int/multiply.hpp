@@ -177,7 +177,7 @@ eval_multiply(
       }
       if (carry)
       {
-         //resize_for_carry(result, (i + inner_limit) + 1); // May throw if checking is enabled
+         resize_for_carry(result, (i + inner_limit) + 1); // May throw if checking is enabled
 
          if (inner_limit < (result.size() - i))
          {
@@ -253,7 +253,7 @@ eval_multiply(
       return;
    }
 
-   result.resize(as + bs, as + bs - 1);
+   result.resize(as + bs, as + bs);
    typename cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_pointer pr = result.limbs();
 #ifdef BOOST_NO_CXX14_CONSTEXPR
    static const double_limb_type limb_max        = ~static_cast<limb_type>(0u);
@@ -302,8 +302,6 @@ eval_multiply(
       }
       if (carry)
       {
-         //resize_for_carry(result, (i + inner_limit) + 1); // May throw if checking is enabled
-
          if (inner_limit < (result.size() - i))
          {
 #ifdef __MSVC_RUNTIME_CHECKS
