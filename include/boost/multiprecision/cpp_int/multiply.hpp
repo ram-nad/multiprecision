@@ -128,7 +128,8 @@ eval_multiply(
       return;
    }
 
-   result.resize(as + bs, as + bs - 1);
+   result.resize(as + bs, as + bs);
+
    typename cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_pointer pr = result.limbs();
 #ifdef BOOST_NO_CXX14_CONSTEXPR
    static const double_limb_type limb_max        = ~static_cast<limb_type>(0u);
@@ -149,22 +150,21 @@ eval_multiply(
    else
 #endif
    std::memset(pr, 0, result.size() * sizeof(limb_type));
+
    for (unsigned i = 0; i < as; ++i)
    {
       carry = 0;
 
-      const unsigned inner_limit = bs;
-
       unsigned j = 0;
 
-      for (; j < inner_limit; ++j)
+      for (; j < bs && ((i + j) < result.size()); ++j)
       {
          BOOST_ASSERT(i + j < result.size());
 #if (!defined(__GLIBCXX__) && !defined(__GLIBCPP__)) || !BOOST_WORKAROUND(BOOST_GCC_VERSION, <= 50100)
          BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >
                                                                                  static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value) * static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value)));
 #endif
-         carry += static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
+         carry += static_cast<double_limb_type>(pa[i] * static_cast<double_limb_type>(pb[j]));
          BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
          carry += pr[i + j];
 #ifdef __MSVC_RUNTIME_CHECKS
@@ -175,20 +175,27 @@ eval_multiply(
          carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
          BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
       }
-      if (carry)
-      {
-         resize_for_carry(result, (i + inner_limit) + 1); // May throw if checking is enabled
 
-         if (inner_limit < (result.size() - i))
-         {
+      if(i + j < result.size())
+      {
 #ifdef __MSVC_RUNTIME_CHECKS
-            pr[(i + inner_limit)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+         pr[(i + j)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
 #else
-            pr[(i + inner_limit)] = static_cast<limb_type>(carry);
+         pr[(i + j)] = static_cast<limb_type>(carry);
 #endif
-         }
       }
    }
+
+   using result_const_reverse_iterator =
+      std::reverse_iterator<typename cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>::const_limb_pointer>;
+
+   const bool trim_highest_limb = (*result_const_reverse_iterator(pr + result.size()) == 0);
+
+   if(trim_highest_limb)
+   {
+      result.resize(as + bs - 1, as + bs - 1);
+   }
+
    result.normalize();
    //
    // Set the sign of the result:
@@ -274,22 +281,21 @@ eval_multiply(
    else
 #endif
    std::memset(pr, 0, result.size() * sizeof(limb_type));
+
    for (unsigned i = 0; i < as; ++i)
    {
       carry = 0;
 
-      const unsigned inner_limit = (std::min)(result.size() - i, bs);
-
       unsigned j = 0;
 
-      for (; j < inner_limit; ++j)
+      for (; j < bs && ((i + j) < result.size()); ++j)
       {
          BOOST_ASSERT(i + j < result.size());
 #if (!defined(__GLIBCXX__) && !defined(__GLIBCPP__)) || !BOOST_WORKAROUND(BOOST_GCC_VERSION, <= 50100)
          BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >
                                                                                  static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value) * static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value)));
 #endif
-         carry += static_cast<double_limb_type>(pa[i]) * static_cast<double_limb_type>(pb[j]);
+         carry += static_cast<double_limb_type>(pa[i] * static_cast<double_limb_type>(pb[j]));
          BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
          carry += pr[i + j];
 #ifdef __MSVC_RUNTIME_CHECKS
@@ -300,19 +306,17 @@ eval_multiply(
          carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
          BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
       }
-      if (carry)
+
+      if(i + j < result.size())
       {
-         if (inner_limit < (result.size() - i))
-         {
 #ifdef __MSVC_RUNTIME_CHECKS
-            pr[(i + inner_limit)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+         pr[(i + j)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
 #else
-            pr[(i + inner_limit)] = static_cast<limb_type>(carry);
+         pr[(i + j)] = static_cast<limb_type>(carry);
 #endif
-         }
       }
    }
-   result.normalize();
+
    //
    // Set the sign of the result:
    //
