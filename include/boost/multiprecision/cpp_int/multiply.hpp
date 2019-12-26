@@ -56,21 +56,6 @@ eval_multiply(
       result.normalize();
 }
 
-//
-// resize_for_carry forces a resize of the underlying buffer only if a previous request
-// for "required" elements could possibly have failed, *and* we have checking enabled.
-// This will cause an overflow error inside resize():
-//
-template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1>
-inline BOOST_MP_CXX14_CONSTEXPR void resize_for_carry(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>& /*result*/, unsigned /*required*/) {}
-
-//template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, class Allocator1>
-//inline BOOST_MP_CXX14_CONSTEXPR void resize_for_carry(cpp_int_backend<MinBits1, MaxBits1, SignType1, checked, Allocator1>& result, unsigned required)
-//{
-//   if (result.size() < required)
-//      result.resize(required, required);
-//}
-
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2, unsigned MinBits3, unsigned MaxBits3, cpp_integer_type SignType3, cpp_int_check_type Checked3, class Allocator3>
 inline BOOST_MP_CXX14_CONSTEXPR typename enable_if_c<   (is_trivial_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value  == false)
                                                      && (is_trivial_cpp_int<cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2> >::value  == false)
@@ -143,40 +128,59 @@ eval_multiply_a_by_b(
    }
    else
 #endif
-   std::memset(pr, 0, result.size() * sizeof(limb_type));
+   {
+      std::memset(pr, 0, result.size() * sizeof(limb_type));
+   }
+
+   // It is here where we have reduced the problem of multiplication
+   // to the level of raw pointers and lengths for the inputs and result.
+   // It is hoped that this tighe loop area is the same for all
+   // forms of multiplciation n*m -> x used in cpp_int.
+
+   // The case of n*n -> n multiplication has not yet been optimized,
+   // but it would be easy to do so.
 
    for (unsigned i = 0; i < as; ++i)
    {
-      carry = 0;
-
-      unsigned j = 0;
-
-      for (; j < bs && ((i + j) < result.size()); ++j)
+      if(pa[i] != 0)
       {
-         BOOST_ASSERT(i + j < result.size());
+         carry = 0;
+
+         unsigned j = 0;
+
+         for (; j < bs && ((i + j) < result.size()); ++j)
+         {
+            BOOST_ASSERT(i + j < result.size());
+
 #if (!defined(__GLIBCXX__) && !defined(__GLIBCPP__)) || !BOOST_WORKAROUND(BOOST_GCC_VERSION, <= 50100)
-         BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >
-                                                                                 static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value) * static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value)));
+            BOOST_ASSERT(    !std::numeric_limits<double_limb_type>::is_specialized
+                         || ((std::numeric_limits<double_limb_type>::max)() - carry > static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value) * static_cast<double_limb_type>(cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value)));
 #endif
-         carry += static_cast<double_limb_type>(pa[i] * static_cast<double_limb_type>(pb[j]));
-         BOOST_ASSERT(!std::numeric_limits<double_limb_type>::is_specialized || ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
-         carry += pr[i + j];
-#ifdef __MSVC_RUNTIME_CHECKS
-         pr[i + j] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
-#else
-         pr[i + j] = static_cast<limb_type>(carry);
-#endif
-         carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
-         BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
-      }
+            carry += static_cast<double_limb_type>(pa[i] * static_cast<double_limb_type>(pb[j]));
 
-      if(i + j < result.size())
-      {
+            BOOST_ASSERT(    !std::numeric_limits<double_limb_type>::is_specialized
+                         || ((std::numeric_limits<double_limb_type>::max)() - carry >= pr[i + j]));
+
+            carry += pr[i + j];
+
 #ifdef __MSVC_RUNTIME_CHECKS
-         pr[(i + j)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+            pr[i + j] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
 #else
-         pr[(i + j)] = static_cast<limb_type>(carry);
+            pr[i + j] = static_cast<limb_type>(carry);
 #endif
+            carry >>= cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_bits;
+
+            BOOST_ASSERT(carry <= (cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::max_limb_value));
+         }
+
+         if(i + j < result.size())
+         {
+#ifdef __MSVC_RUNTIME_CHECKS
+            pr[(i + j)] = static_cast<limb_type>(carry & ~static_cast<limb_type>(0));
+#else
+            pr[(i + j)] = static_cast<limb_type>(carry);
+#endif
+         }
       }
    }
 }
