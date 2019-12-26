@@ -65,48 +65,10 @@ eval_multiply_a_by_b(
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
-   // Very simple long multiplication, only usable for small numbers of limb_type's
-   // but that's the typical use case for this type anyway:
-   //
-   // Special cases first:
-   //
    unsigned                                                                                          as = a.size();
    unsigned                                                                                          bs = b.size();
    typename cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>::const_limb_pointer pa = a.limbs();
    typename cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>::const_limb_pointer pb = b.limbs();
-
-   if (as == 1)
-   {
-      if (bs == 1)
-      {
-         result = static_cast<double_limb_type>(*pa) * static_cast<double_limb_type>(*pb);
-      }
-      else
-      {
-         limb_type l = *pa;
-         eval_multiply(result, b, l);
-      }
-      return;
-   }
-   if (bs == 1)
-   {
-      limb_type l = *pb;
-      eval_multiply(result, a, l);
-      return;
-   }
-
-   if ((void*)&result == (void*)&a)
-   {
-      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(a);
-      eval_multiply(result, t, b);
-      return;
-   }
-   if ((void*)&result == (void*)&b)
-   {
-      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(b);
-      eval_multiply(result, a, t);
-      return;
-   }
 
    result.resize(as + bs, as + bs);
    typename cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>::limb_pointer pr = result.limbs();
@@ -195,6 +157,49 @@ eval_multiply(
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
+   unsigned                                                                                          as = a.size();
+   unsigned                                                                                          bs = b.size();
+   typename cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>::const_limb_pointer pa = a.limbs();
+   typename cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>::const_limb_pointer pb = b.limbs();
+
+   // Special cases first:
+   const bool result_is_signed = (b.sign() != a.sign());
+
+   if (as == 1)
+   {
+      if (bs == 1)
+      {
+         result = static_cast<double_limb_type>(*pa) * static_cast<double_limb_type>(*pb);
+      }
+      else
+      {
+         limb_type l = *pa;
+         eval_multiply(result, b, l);
+      }
+      result.sign(result_is_signed);
+      return;
+   }
+   if (bs == 1)
+   {
+      limb_type l = *pb;
+      eval_multiply(result, a, l);
+      result.sign(result_is_signed);
+      return;
+   }
+
+   if ((void*)&result == (void*)&a)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(a);
+      eval_multiply(result, t, b);
+      return;
+   }
+   if ((void*)&result == (void*)&b)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(b);
+      eval_multiply(result, a, t);
+      return;
+   }
+
    eval_multiply_a_by_b(result, a, b);
 
    using result_cpp_int_backend_type = cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>;
@@ -211,7 +216,7 @@ eval_multiply(
       result.resize(a.size() + b.size() - 1, a.size() + b.size() - 1);
    }
 
-   result.sign(b.sign() != a.sign());
+   result.sign(result_is_signed);
 }
 
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2, unsigned MinBits3, unsigned MaxBits3, cpp_integer_type SignType3, cpp_int_check_type Checked3, class Allocator3>
@@ -224,9 +229,52 @@ eval_multiply(
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
+   unsigned                                                                                          as = a.size();
+   unsigned                                                                                          bs = b.size();
+   typename cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>::const_limb_pointer pa = a.limbs();
+   typename cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>::const_limb_pointer pb = b.limbs();
+
+   // Special cases first:
+   const bool result_is_signed = (b.sign() != a.sign());
+
+   if (as == 1)
+   {
+      if (bs == 1)
+      {
+         result = static_cast<double_limb_type>(*pa) * static_cast<double_limb_type>(*pb);
+      }
+      else
+      {
+         limb_type l = *pa;
+         eval_multiply(result, b, l);
+      }
+      result.sign(result_is_signed);
+      return;
+   }
+   if (bs == 1)
+   {
+      limb_type l = *pb;
+      eval_multiply(result, a, l);
+      result.sign(result_is_signed);
+      return;
+   }
+
+   if ((void*)&result == (void*)&a)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(a);
+      eval_multiply(result, t, b);
+      return;
+   }
+   if ((void*)&result == (void*)&b)
+   {
+      cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> t(b);
+      eval_multiply(result, a, t);
+      return;
+   }
+
    eval_multiply_a_by_b(result, a, b);
 
-   result.sign(b.sign() != a.sign());
+   result.sign(result_is_signed);
 
    result.normalize();
 }
