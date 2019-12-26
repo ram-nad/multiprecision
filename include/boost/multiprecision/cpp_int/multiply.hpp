@@ -191,8 +191,6 @@ eval_multiply(
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
-   const bool result_is_neg = (b.sign() != a.sign());
-
    eval_multiply_a_by_b(result, a, b);
 
    using result_cpp_int_backend_type = cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1>;
@@ -209,9 +207,7 @@ eval_multiply(
       result.resize(a.size() + b.size() - 1, a.size() + b.size() - 1);
    }
 
-   result.normalize();
-
-   result.sign(result_is_neg);
+   result.sign(b.sign() != a.sign());
 }
 
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2, unsigned MinBits3, unsigned MaxBits3, cpp_integer_type SignType3, cpp_int_check_type Checked3, class Allocator3>
@@ -224,11 +220,11 @@ eval_multiply(
     const cpp_int_backend<MinBits2, MaxBits2, SignType2, Checked2, Allocator2>& a,
     const cpp_int_backend<MinBits3, MaxBits3, SignType3, Checked3, Allocator3>& b) BOOST_MP_NOEXCEPT_IF((is_non_throwing_cpp_int<cpp_int_backend<MinBits1, MaxBits1, SignType1, Checked1, Allocator1> >::value))
 {
-   const bool result_is_neg = (b.sign() != a.sign());
-
    eval_multiply_a_by_b(result, a, b);
 
-   result.sign(result_is_neg);
+   result.sign(b.sign() != a.sign());
+
+   result.normalize();
 }
 
 template <unsigned MinBits1, unsigned MaxBits1, cpp_integer_type SignType1, cpp_int_check_type Checked1, class Allocator1, unsigned MinBits2, unsigned MaxBits2, cpp_integer_type SignType2, cpp_int_check_type Checked2, class Allocator2>
