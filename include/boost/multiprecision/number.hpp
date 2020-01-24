@@ -2004,6 +2004,56 @@ inline std::ostream& operator<<(std::ostream& os, const number<Backend, Expressi
    std::streamsize d  = os.precision();
    std::string     s  = r.str(d, os.flags());
    std::streamsize ss = os.width();
+
+   const std::numpunct<char> &n = std::use_facet<std::numpunct<char> >(os.getloc());
+   bool scientific_format = (os.flags() & std::ios_base::scientific) == std::ios_base::scientific;
+
+   char dec_point = n.decimal_point();
+   char group_sep = n.thousands_sep();
+   std::string group = n.grouping();
+
+   std::streamsize x = 0;
+   std::streamsize len = static_cast<std::streamsize>(s.size());
+
+   // Find if there is a decimal point in the output, if yes
+   // replace it with proper character
+   // We need to do this first because we will add group seprating
+   // character only to the left of decimal
+   while(x < len && s[x] != '.'){
+      x++;
+   }
+
+   if(s[x] == '.'){
+      s[x] = dec_point;
+   }
+   
+   // If output is in scientific format and number kind is floating point
+   // then we don't need group sepration characters at all
+   if(!(scientific_format && (boost::multiprecision::number_category<number<Backend, ExpressionTemplates> >::value == boost::multiprecision::number_kind_floating_point))){
+
+      std::streamsize least = 0;
+
+      if(s[0] == '-'){
+         least = 1;
+      }
+
+      // If empty string is returned from `grouping()` function
+      // it means no grouping needs to done
+      if(group.size() != 0){
+         char default_gap = static_cast<std::streamsize>(group[group.size() - 1]);
+         x = x - static_cast<std::streamsize>(group[0]);
+         std::string::size_type grp_index = 1;
+         while(x > least && grp_index < (group.size() - 1)) {
+            s.insert(x, 1, group_sep);
+            x = x - static_cast<std::streamsize>(group[grp_index++]);
+         }
+         while(x > least){
+            s.insert(x, 1, group_sep);
+            x = x - default_gap;
+         }
+      }
+   }
+
    if (ss > static_cast<std::streamsize>(s.size()))
    {
       char fill = os.fill();
@@ -2075,21 +2125,53 @@ inline std::istream& operator>>(std::istream& is, number<Backend, ExpressionTemp
    bool        hex_format = (is.flags() & std::ios_base::hex) == std::ios_base::hex;
    bool        oct_format = (is.flags() & std::ios_base::oct) == std::ios_base::oct;
    std::string s;
+   const std::numpunct<char> &n = std::use_facet<std::numpunct<char> >(is.getloc());
+   char dec_point = n.decimal_point();
+   std::string group_sep = std::string(1, n.thousands_sep());
+   std::string group = n.grouping();
+   // If no grouping then group sepration charcter sould
+   // not be present
+   if(group.size() == 0){
+      group_sep = "";
+   }
    switch (boost::multiprecision::number_category<number<Backend, ExpressionTemplates> >::value)
    {
    case boost::multiprecision::number_kind_integer:
       if (oct_format)
-         s = detail::read_string_while(is, "+-01234567");
+         s = detail::read_string_while(is, "+-01234567" + group_sep);
       else if (hex_format)
-         s = detail::read_string_while(is, "+-xXabcdefABCDEF0123456789");
+         s = detail::read_string_while(is, "+-xXabcdefABCDEF0123456789" + group_sep);
       else
-         s = detail::read_string_while(is, "+-0123456789");
+         s = detail::read_string_while(is, "+-0123456789" + group_sep);
       break;
    case boost::multiprecision::number_kind_floating_point:
-      s = detail::read_string_while(is, "+-eE.0123456789infINFnanNANinfinityINFINITY");
+      s = detail::read_string_while(is, "+-eE0123456789infINFnanNANinfinityINFINITY" + group_sep + dec_point);
       break;
    default:
       is >> s;
+   }
+   std::cout << s;
+   // If group sepration exists, then just remove all the
+   // group_sep chars from input. This is done arbitarily
+   // better option would be to use values returned by `grouping()`
+   // to do this
+   if(group_sep.size() == 1){
+      for(std::string::size_type i=0; i < s.size();){
+         if(s[i] == group_sep[0]){
+            s.erase(i, 1);
+         }else{
+            i++;
+         }
+      }
+   }
+   // Replace the decimal point
+   // We could change only the first decimal_point
+   // but this way code with function similar to what
+   // it does without locale settings
+   for(std::string::size_type i=0; i < s.size() && dec_point != '.'; i++){
+      if(s[i] == dec_point){
+         s[i] = '.';
+      }
    }
    if (s.size())
    {
