@@ -2044,12 +2044,17 @@ inline std::ostream& operator<<(std::ostream& os, const number<Backend, Expressi
          x = x - static_cast<std::streamsize>(group[0]);
          std::string::size_type grp_index = 1;
          while(x > least && grp_index < (group.size() - 1)) {
+            if(group[grp_index] <= 0 || group[grp_index] == CHAR_MAX){
+               break;
+            }
             s.insert(x, 1, group_sep);
             x = x - static_cast<std::streamsize>(group[grp_index++]);
          }
-         while(x > least){
-            s.insert(x, 1, group_sep);
-            x = x - default_gap;
+         if(grp_index == (group.size() - 1) && !(default_gap <= 0 || default_gap == CHAR_MAX)){
+            while(x > least){
+               s.insert(x, 1, group_sep);
+               x = x - default_gap;
+            }
          }
       }
    }
