@@ -56,11 +56,11 @@ class number
    BOOST_MP_FORCEINLINE BOOST_CONSTEXPR number(const number& e) BOOST_MP_NOEXCEPT_IF(noexcept(Backend(std::declval<Backend const&>()))) : m_backend(e.m_backend) {}
    template <class V>
    BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const V& v, typename boost::enable_if_c<
-                                               (boost::is_arithmetic<V>::value || is_same<std::string, V>::value || is_convertible<V, const char*>::value) && !is_convertible<typename detail::canonical<V, Backend>::type, Backend>::value && !detail::is_restricted_conversion<typename detail::canonical<V, Backend>::type, Backend>::value
+                                                                        (boost::is_arithmetic<V>::value || is_same<std::string, V>::value || is_convertible<V, const char*>::value) && !is_convertible<typename detail::canonical<V, Backend>::type, Backend>::value && !detail::is_restricted_conversion<typename detail::canonical<V, Backend>::type, Backend>::value
 #ifdef BOOST_HAS_FLOAT128
-                                               && !boost::is_same<V, __float128>::value
+                                                                        && !boost::is_same<V, __float128>::value
 #endif
-                                               >::type* = 0)
+                                                                        >::type* = 0)
    {
       m_backend = canonical_value(v);
    }
@@ -85,7 +85,7 @@ class number
        : m_backend(e.m_backend, digits10) {}
    template <class V>
    explicit BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const V& v, typename boost::enable_if_c<
-                                                        (boost::is_arithmetic<V>::value || is_same<std::string, V>::value || is_convertible<V, const char*>::value) && !detail::is_explicitly_convertible<typename detail::canonical<V, Backend>::type, Backend>::value && detail::is_restricted_conversion<typename detail::canonical<V, Backend>::type, Backend>::value>::type* = 0)
+                                                                                 (boost::is_arithmetic<V>::value || is_same<std::string, V>::value || is_convertible<V, const char*>::value) && !detail::is_explicitly_convertible<typename detail::canonical<V, Backend>::type, Backend>::value && detail::is_restricted_conversion<typename detail::canonical<V, Backend>::type, Backend>::value>::type* = 0)
        BOOST_MP_NOEXCEPT_IF(noexcept(std::declval<Backend&>() = std::declval<typename detail::canonical<V, Backend>::type const&>()))
    {
       m_backend = canonical_value(v);
@@ -105,13 +105,13 @@ class number
 
    template <class Other, expression_template_option ET>
    BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const number<Other, ET>& val,
-                               typename boost::enable_if_c<(boost::is_convertible<Other, Backend>::value && !detail::is_restricted_conversion<Other, Backend>::value)>::type* = 0)
+                                                        typename boost::enable_if_c<(boost::is_convertible<Other, Backend>::value && !detail::is_restricted_conversion<Other, Backend>::value)>::type* = 0)
        BOOST_MP_NOEXCEPT_IF(noexcept(Backend(std::declval<Other const&>())))
        : m_backend(val.backend()) {}
 
    template <class Other, expression_template_option ET>
    explicit BOOST_MP_CXX14_CONSTEXPR number(const number<Other, ET>& val, typename boost::enable_if_c<
-                                                     (!detail::is_explicitly_convertible<Other, Backend>::value)>::type* = 0)
+                                                                              (!detail::is_explicitly_convertible<Other, Backend>::value)>::type* = 0)
    {
       //
       // Attempt a generic interconvertion:
@@ -123,12 +123,12 @@ class number
    }
    template <class Other, expression_template_option ET>
    explicit BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const number<Other, ET>& val, typename boost::enable_if_c<
-                                                                          (detail::is_explicitly_convertible<Other, Backend>::value && (detail::is_restricted_conversion<Other, Backend>::value || !boost::is_convertible<Other, Backend>::value))>::type* = 0) BOOST_MP_NOEXCEPT_IF(noexcept(Backend(std::declval<Other const&>())))
+                                                                                                   (detail::is_explicitly_convertible<Other, Backend>::value && (detail::is_restricted_conversion<Other, Backend>::value || !boost::is_convertible<Other, Backend>::value))>::type* = 0) BOOST_MP_NOEXCEPT_IF(noexcept(Backend(std::declval<Other const&>())))
        : m_backend(val.backend()) {}
 
    template <class V, class U>
    BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const V& v1, const U& v2,
-                               typename boost::enable_if_c<(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value && !is_same<typename component_type<self_type>::type, self_type>::value)>::type* = 0)
+                                                        typename boost::enable_if_c<(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value && !is_same<typename component_type<self_type>::type, self_type>::value)>::type* = 0)
    {
       using default_ops::assign_components;
       detail::scoped_default_precision<number<Backend, ExpressionTemplates> > precision_guard(v1, v2);
@@ -136,8 +136,8 @@ class number
    }
    template <class V, class U>
    BOOST_MP_FORCEINLINE explicit BOOST_MP_CXX14_CONSTEXPR number(const V& v1, const U& v2,
-                                        typename boost::enable_if_c<
-                                            (is_constructible<value_type, V>::value || is_convertible<V, std::string>::value) && (is_constructible<value_type, U>::value || is_convertible<U, std::string>::value) && !is_same<typename component_type<self_type>::type, self_type>::value && !is_same<V, self_type>::value && !(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value)>::type* = 0)
+                                                                 typename boost::enable_if_c<
+                                                                     (is_constructible<value_type, V>::value || is_convertible<V, std::string>::value) && (is_constructible<value_type, U>::value || is_convertible<U, std::string>::value) && !is_same<typename component_type<self_type>::type, self_type>::value && !is_same<V, self_type>::value && !(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value)>::type* = 0)
    {
       using default_ops::assign_components;
       detail::scoped_default_precision<number<Backend, ExpressionTemplates> > precision_guard(v1, v2);
@@ -173,12 +173,12 @@ class number
 
    template <class V, class U>
    BOOST_MP_FORCEINLINE BOOST_MP_CXX14_CONSTEXPR number(const V& v1, const U& v2, unsigned digits10,
-                               typename boost::enable_if_c<(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value && !is_same<typename component_type<self_type>::type, self_type>::value)>::type* = 0)
+                                                        typename boost::enable_if_c<(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value && !is_same<typename component_type<self_type>::type, self_type>::value)>::type* = 0)
        : m_backend(canonical_value(detail::evaluate_if_expression(v1)), canonical_value(detail::evaluate_if_expression(v2)), digits10)
    {}
    template <class V, class U>
    BOOST_MP_FORCEINLINE explicit BOOST_MP_CXX14_CONSTEXPR number(const V& v1, const U& v2, unsigned digits10,
-                                        typename boost::enable_if_c<((is_constructible<value_type, V>::value || is_convertible<V, std::string>::value) && (is_constructible<value_type, U>::value || is_convertible<U, std::string>::value) && !is_same<typename component_type<self_type>::type, self_type>::value) && !(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value)>::type* = 0)
+                                                                 typename boost::enable_if_c<((is_constructible<value_type, V>::value || is_convertible<V, std::string>::value) && (is_constructible<value_type, U>::value || is_convertible<U, std::string>::value) && !is_same<typename component_type<self_type>::type, self_type>::value) && !(is_convertible<V, value_type>::value && is_convertible<U, value_type>::value)>::type* = 0)
        : m_backend(canonical_value(detail::evaluate_if_expression(v1)), canonical_value(detail::evaluate_if_expression(v2)), digits10) {}
 
    template <class Other, expression_template_option ET>
@@ -193,7 +193,7 @@ class number
    BOOST_MP_CXX14_CONSTEXPR typename boost::enable_if_c<is_convertible<typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type, self_type>::value, number&>::type operator=(const detail::expression<tag, Arg1, Arg2, Arg3, Arg4>& e)
    {
       typedef mpl::bool_<is_same<number, typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type>::value> tag_type;
-      detail::scoped_default_precision<number<Backend, ExpressionTemplates> >                                       precision_guard(e);
+      detail::scoped_default_precision<number<Backend, ExpressionTemplates> >                                           precision_guard(e);
       //
       // If the current precision of *this differs from that of expression e, then we
       // create a temporary (which will have the correct precision thanks to precision_guard)
@@ -216,7 +216,7 @@ class number
    BOOST_MP_CXX14_CONSTEXPR number& assign(const detail::expression<tag, Arg1, Arg2, Arg3, Arg4>& e)
    {
       typedef mpl::bool_<is_same<number, typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type>::value> tag_type;
-      detail::scoped_default_precision<number<Backend, ExpressionTemplates> >                                       precision_guard(e);
+      detail::scoped_default_precision<number<Backend, ExpressionTemplates> >                                           precision_guard(e);
       //
       // If the current precision of *this differs from that of expression e, then we
       // create a temporary (which will have the correct precision thanks to precision_guard)
@@ -305,7 +305,7 @@ class number
    }
    template <class tag, class Arg1, class Arg2, class Arg3, class Arg4>
    explicit BOOST_MP_CXX14_CONSTEXPR number(const detail::expression<tag, Arg1, Arg2, Arg3, Arg4>& e,
-                   typename boost::enable_if_c<!is_convertible<typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type, self_type>::value && boost::multiprecision::detail::is_explicitly_convertible<typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type, self_type>::value>::type* = 0)
+                                            typename boost::enable_if_c<!is_convertible<typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type, self_type>::value && boost::multiprecision::detail::is_explicitly_convertible<typename detail::expression<tag, Arg1, Arg2, Arg3, Arg4>::result_type, self_type>::value>::type* = 0)
    {
       //
       // No precision guard as assign has one already:
@@ -394,7 +394,8 @@ class number
 
    template <class V>
    typename boost::enable_if_c<boost::is_convertible<V, self_type>::value, number<Backend, ExpressionTemplates>&>::type
-      BOOST_MP_CXX14_CONSTEXPR operator+=(const V& v)
+       BOOST_MP_CXX14_CONSTEXPR
+       operator+=(const V& v)
    {
       using default_ops::eval_add;
       eval_add(m_backend, canonical_value(v));
@@ -2005,53 +2006,62 @@ inline std::ostream& operator<<(std::ostream& os, const number<Backend, Expressi
    std::string     s  = r.str(d, os.flags());
    std::streamsize ss = os.width();
 
-   const std::numpunct<char> &n = std::use_facet<std::numpunct<char> >(os.getloc());
-   bool scientific_format = (os.flags() & std::ios_base::scientific) == std::ios_base::scientific;
+   const std::numpunct<char>& n                 = std::use_facet<std::numpunct<char> >(os.getloc());
+   bool                       scientific_format = (os.flags() & std::ios_base::scientific) == std::ios_base::scientific;
 
-   char dec_point = n.decimal_point();
-   char group_sep = n.thousands_sep();
-   std::string group = n.grouping();
+   char        dec_point = n.decimal_point();
+   char        group_sep = n.thousands_sep();
+   std::string group     = n.grouping();
 
-   std::streamsize x = 0;
+   std::streamsize x   = 0;
    std::streamsize len = static_cast<std::streamsize>(s.size());
 
    // Find if there is a decimal point in the output, if yes
    // replace it with proper character
    // We need to do this first because we will add group seprating
    // character only to the left of decimal
-   while(x < len && s[x] != '.'){
+   while (x < len && s[x] != '.')
+   {
       x++;
    }
 
-   if(s[x] == '.'){
+   if (s[x] == '.')
+   {
       s[x] = dec_point;
    }
-   
+
    // If output is in scientific format and number kind is floating point
    // then we don't need group sepration characters at all
-   if(!(scientific_format && (boost::multiprecision::number_category<number<Backend, ExpressionTemplates> >::value == boost::multiprecision::number_kind_floating_point))){
+   if (!(scientific_format && (boost::multiprecision::number_category<number<Backend, ExpressionTemplates> >::value == boost::multiprecision::number_kind_floating_point)))
+   {
 
       std::streamsize least = 0;
 
-      if(s[0] == '-'){
+      if (s[0] == '-')
+      {
          least = 1;
       }
 
       // If empty string is returned from `grouping()` function
       // it means no grouping needs to done
-      if(group.size() != 0){
-         char default_gap = static_cast<std::streamsize>(group[group.size() - 1]);
-         x = x - static_cast<std::streamsize>(group[0]);
+      if (group.size() != 0)
+      {
+         char default_gap                 = static_cast<std::streamsize>(group[group.size() - 1]);
+         x                                = x - static_cast<std::streamsize>(group[0]);
          std::string::size_type grp_index = 1;
-         while(x > least && grp_index < (group.size() - 1)) {
-            if(group[grp_index] <= 0 || group[grp_index] == CHAR_MAX){
+         while (x > least && grp_index < (group.size() - 1))
+         {
+            if (group[grp_index] <= 0 || group[grp_index] == CHAR_MAX)
+            {
                break;
             }
             s.insert(x, 1, group_sep);
             x = x - static_cast<std::streamsize>(group[grp_index++]);
          }
-         if(grp_index == (group.size() - 1) && !(default_gap <= 0 || default_gap == CHAR_MAX)){
-            while(x > least){
+         if (grp_index == (group.size() - 1) && !(default_gap <= 0 || default_gap == CHAR_MAX))
+         {
+            while (x > least)
+            {
                s.insert(x, 1, group_sep);
                x = x - default_gap;
             }
@@ -2127,16 +2137,17 @@ inline std::string read_string_while(std::istream& is, std::string const& permit
 template <class Backend, expression_template_option ExpressionTemplates>
 inline std::istream& operator>>(std::istream& is, number<Backend, ExpressionTemplates>& r)
 {
-   bool        hex_format = (is.flags() & std::ios_base::hex) == std::ios_base::hex;
-   bool        oct_format = (is.flags() & std::ios_base::oct) == std::ios_base::oct;
-   std::string s;
-   const std::numpunct<char> &n = std::use_facet<std::numpunct<char> >(is.getloc());
-   char dec_point = n.decimal_point();
-   std::string group_sep = std::string(1, n.thousands_sep());
-   std::string group = n.grouping();
+   bool                       hex_format = (is.flags() & std::ios_base::hex) == std::ios_base::hex;
+   bool                       oct_format = (is.flags() & std::ios_base::oct) == std::ios_base::oct;
+   std::string                s;
+   const std::numpunct<char>& n         = std::use_facet<std::numpunct<char> >(is.getloc());
+   char                       dec_point = n.decimal_point();
+   std::string                group_sep = std::string(1, n.thousands_sep());
+   std::string                group     = n.grouping();
    // If no grouping then group sepration charcter sould
    // not be present
-   if(group.size() == 0){
+   if (group.size() == 0)
+   {
       group_sep = "";
    }
    switch (boost::multiprecision::number_category<number<Backend, ExpressionTemplates> >::value)
@@ -2160,11 +2171,16 @@ inline std::istream& operator>>(std::istream& is, number<Backend, ExpressionTemp
    // group_sep chars from input. This is done arbitarily
    // better option would be to use values returned by `grouping()`
    // to do this
-   if(group_sep.size() == 1){
-      for(std::string::size_type i=0; i < s.size();){
-         if(s[i] == group_sep[0]){
+   if (group_sep.size() == 1)
+   {
+      for (std::string::size_type i = 0; i < s.size();)
+      {
+         if (s[i] == group_sep[0])
+         {
             s.erase(i, 1);
-         }else{
+         }
+         else
+         {
             i++;
          }
       }
@@ -2173,8 +2189,10 @@ inline std::istream& operator>>(std::istream& is, number<Backend, ExpressionTemp
    // We could change only the first decimal_point
    // but this way code with function similar to what
    // it does without locale settings
-   for(std::string::size_type i=0; i < s.size() && dec_point != '.'; i++){
-      if(s[i] == dec_point){
+   for (std::string::size_type i = 0; i < s.size() && dec_point != '.'; i++)
+   {
+      if (s[i] == dec_point)
+      {
          s[i] = '.';
       }
    }
